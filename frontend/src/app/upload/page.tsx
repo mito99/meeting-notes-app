@@ -1,13 +1,15 @@
 "use client"
 
-import { useState } from 'react'
 import Navbar from '@/components/navbar'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { useToast } from '@/hooks/use-toast'
 import { Upload } from 'lucide-react'
+import { useState } from 'react'
 
 export default function UploadPage() {
+  const { toast } = useToast();
   const [file, setFile] = useState<File | null>(null)
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -20,11 +22,35 @@ export default function UploadPage() {
     e.preventDefault()
     if (!file) return
 
-    // TODO: Implement file upload to backend
-    console.log('Uploading file:', file.name)
-    // Here you would typically send the file to your backend
-    // using fetch or axios, and then handle the response
-  }
+    const formData = new FormData()
+    formData.append("file", file)
+
+    try {
+      const response = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      })
+
+      if (!response.ok) {
+        throw new Error("ファイルアップロードに失敗しました");
+      }
+
+      const result = await response.json();
+      toast({
+        title: "ファイルアップロードに成功しました",
+        description: result.message,
+      });
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : "不明なエラーが発生しました";
+      toast({
+        title: "ファイルアップロードに失敗しました",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
